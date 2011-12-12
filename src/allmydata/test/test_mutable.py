@@ -2658,8 +2658,13 @@ class Problems(GridTestMixin, unittest.TestCase, testutil.ShouldFailMixin):
             # that ought to work too
             d.addCallback(lambda res: n.download_best_version())
             d.addCallback(lambda res: self.failUnlessEqual(res, "contents 2"))
+            self._node = n
             return d
         d.addCallback(_created)
+        d.addCallback(lambda ign:
+            self._node.get_servermap(MODE_CHECK))
+        d.addCallback(lambda smap:
+            self.failUnlessEqual(len(smap.get_known_shares()), 10))
         return d
 
     def test_publish_all_servers_bad(self):
