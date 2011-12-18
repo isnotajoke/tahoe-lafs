@@ -296,6 +296,11 @@ class NoNetworkGrid(service.MultiService):
         # asked to hold a share or serve a share
         self.wrappers_by_id[serverid].broken = True
 
+    def fix_server(self, serverid):
+        # mark a (presumably previously broken) server as fixed, so it
+        # will resume accepting and serving shares
+        self.wrappers_by_id[serverid].broken = False
+
     def hang_server(self, serverid):
         # hang the given server
         ss = self.wrappers_by_id[serverid]
