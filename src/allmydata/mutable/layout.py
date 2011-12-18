@@ -885,14 +885,10 @@ class MDMFSlotWriteProxy:
 
         I am mostly used for tests.
         """
-        if self._root_hash:
-            roothash = self._root_hash
-        else:
-            roothash = "\x00" * 32
         return struct.pack(MDMFCHECKSTRING,
                            1,
                            self._seqnum,
-                           roothash)
+                           self._root_hash)
 
 
     def put_block(self, data, segnum, salt):
