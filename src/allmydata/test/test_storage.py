@@ -22,7 +22,7 @@ from allmydata.immutable.layout import WriteBucketProxy, WriteBucketProxy_v2, \
      ReadBucketProxy
 from allmydata.mutable.layout import MDMFSlotWriteProxy, MDMFSlotReadProxy, \
                                      LayoutInvalid, MDMFSIGNABLEHEADER, \
-                                     SIGNED_PREFIX, MDMFHEADER, \
+                                     SIGNED_PREFIX, MDMFHEADER, PREFIX, \
                                      MDMFOFFSETS, SDMFSlotWriteProxy, \
                                      PRIVATE_KEY_SIZE, \
                                      SIGNATURE_SIZE, \
@@ -2762,6 +2762,41 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                  {0: [data[9:]]})
         d.addCallback(_then_again)
         return d
+
+
+    def test_sdmf_writer_get_checkstring(self):
+        self.build_test_sdmf_share()
+        sdmfw = SDMFSlotWriteProxy(0,
+                                   self.rref,
+                                   "si1",
+                                   self.secrets,
+                                   1, 3, 10, 36, 36)
+        sdmfw.put_block(self.blockdata, 0, self.salt)
+
+        # Put the encprivkey
+        sdmfw.put_encprivkey(self.encprivkey)
+
+        # Put the block and share hash chains
+        sdmfw.put_blockhashes(self.block_hash_tree)
+        sdmfw.put_sharehashes(self.share_hash_chain)
+
+        # Put the root hash
+        sdmfw.put_root_hash(self.root_hash)
+
+        # Put the signature
+        sdmfw.put_signature(self.signature)
+
+        # Put the verification key
+        sdmfw.put_verification_key(self.verification_key)
+
+        # Now get the checkstring; this should be a packed version of 
+        # (0, 1, roothash, salt)
+        checkstring = struct.pack(PREFIX,
+                                  0,
+                                  1,
+                                  self.root_hash,
+                                  self.salt)
+        self.failUnlessEqual(sdmfw.get_checkstring(), checkstring)
 
 
 class Stats(unittest.TestCase):
