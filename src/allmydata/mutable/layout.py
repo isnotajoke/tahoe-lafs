@@ -294,7 +294,7 @@ class SDMFSlotWriteProxy:
         self._testvs = [(0, len(checkstring), "eq", checkstring)]
 
 
-    def get_checkstring(self):
+    def get_next_checkstring(self):
         assert "root_hash" in self._share_pieces
         assert "salt" in self._share_pieces
 
@@ -838,8 +838,8 @@ class MDMFSlotWriteProxy:
         This can be invoked in one of two ways.
 
         With one argument, I assume that you are giving me a literal
-        checkstring -- e.g., the output of get_checkstring. I will then
-        set that checkstring as it is. This form is used by unit tests.
+        checkstring. I will then set that checkstring as it is. This
+        form is used by unit tests.
 
         With two arguments, I assume that you are giving me a sequence
         number and root hash to make a checkstring from. In that case, I
@@ -878,7 +878,7 @@ class MDMFSlotWriteProxy:
         return "MDMFSlotWriteProxy for share %d" % self.shnum
 
 
-    def get_checkstring(self):
+    def get_next_checkstring(self):
         """
         Given a share number, I return a representation of what the
         checkstring for that share on the server will look like.
@@ -1015,7 +1015,7 @@ class MDMFSlotWriteProxy:
         self._root_hash = roothash
         # To write both of these values, we update the checkstring on
         # the remote server, which includes them
-        checkstring = self.get_checkstring()
+        checkstring = self.get_next_checkstring()
         self._writevs.append(tuple([0, checkstring]))
         # This write, if successful, changes the checkstring, so we need
         # to update our internal checkstring to be consistent with the
@@ -1143,7 +1143,7 @@ class MDMFSlotWriteProxy:
         if not self._written:
             # Write a new checkstring to the share when we write it, so
             # that we have something to check later.
-            new_checkstring = self.get_checkstring()
+            new_checkstring = self.get_next_checkstring()
             datavs.append((0, new_checkstring))
             def _first_write():
                 self._written = True

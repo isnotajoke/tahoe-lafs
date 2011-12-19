@@ -1754,7 +1754,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
             result, readv = results
             self.failUnless(result)
             self.failIf(readv)
-            self.old_checkstring = mw.get_checkstring()
+            self.old_checkstring = mw.get_next_checkstring()
             mw.set_checkstring("")
         d.addCallback(_then)
         d.addCallback(lambda ignored:
@@ -2300,7 +2300,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
         d.addCallback(lambda ignored:
             mr.get_checkstring())
         d.addCallback(lambda checkstring:
-            self.failUnlessEqual(checkstring, mw.get_checkstring()))
+            self.failUnlessEqual(checkstring, mw.get_next_checkstring()))
         return d
 
 
@@ -2796,7 +2796,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                   1,
                                   self.root_hash,
                                   self.salt)
-        self.failUnlessEqual(sdmfw.get_checkstring(), checkstring)
+        self.failUnlessEqual(sdmfw.get_next_checkstring(), checkstring)
 
 
 class Stats(unittest.TestCase):

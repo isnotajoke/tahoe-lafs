@@ -825,7 +825,7 @@ class Publish:
         uncoordinated writes. SDMF files will have the same checkstring,
         so we need not do anything.
         """
-        self._checkstring = self.writers.values()[0][0].get_checkstring()
+        self._checkstring = self.writers.values()[0][0].get_next_checkstring()
 
 
     def _make_and_place_signature(self):
