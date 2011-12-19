@@ -2773,10 +2773,11 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                    1, 3, 10, 36, 36)
         sdmfw.put_block(self.blockdata, 0, self.salt)
         other_checkstring = struct.pack(PREFIX,
-                                          0,
-                                          0,
-                                          "b" * 32,
-                                          "c" * 12)
+                                        0,
+                                        0,
+                                        "b" * 32,
+                                        "c" * 12)
+        sdmfw.set_checkstring(other_checkstring)
         # Put the encprivkey
         sdmfw.put_encprivkey(self.encprivkey)
 
