@@ -294,6 +294,17 @@ class SDMFSlotWriteProxy:
         self._testvs = [(0, len(checkstring), "eq", checkstring)]
 
 
+    def get_current_checkstring(self):
+        """
+        I return the checkstring that I think should exist on the remote
+        storage server before I'm told to write the new share to the
+        storage server.
+        """
+        if not self._testvs: return ""
+
+        return self._testvs[0][3]
+
+
     def get_next_checkstring(self):
         assert "root_hash" in self._share_pieces
         assert "salt" in self._share_pieces
@@ -876,6 +887,17 @@ class MDMFSlotWriteProxy:
 
     def __repr__(self):
         return "MDMFSlotWriteProxy for share %d" % self.shnum
+
+
+    def get_current_checkstring(self):
+        """
+        I return the checkstring that I think should exist on the remote
+        storage server before I'm told to write the new share to the
+        storage server.
+        """
+        if not self._testvs: return ""
+
+        return self._testvs[0][3]
 
 
     def get_next_checkstring(self):
