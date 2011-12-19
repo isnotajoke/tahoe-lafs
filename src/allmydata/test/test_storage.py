@@ -2742,9 +2742,6 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
         # Put the verification key
         sdmfw.put_verification_key(self.verification_key)
 
-        # We shouldn't have a checkstring yet
-        self.failUnlessEqual(sdmfw.get_checkstring(), "")
-
         d = sdmfw.finish_publishing()
         def _then(results):
             self.failIf(results[0])
@@ -2754,10 +2751,6 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
 
         d.addCallback(_then)
         d.addCallback(sdmfw.set_checkstring)
-        d.addCallback(lambda ignored:
-            sdmfw.get_checkstring())
-        d.addCallback(lambda checkstring:
-            self.failUnlessEqual(checkstring, self._expected_checkstring))
         d.addCallback(lambda ignored:
             sdmfw.finish_publishing())
         def _then_again(results):
