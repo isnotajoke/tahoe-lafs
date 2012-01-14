@@ -2953,6 +2953,42 @@ class Check(GridTestMixin, CLITestMixin, unittest.TestCase):
 
         return d
 
+    def test_check_and_repair_1212(self):
+        self.basedir = "cli/Check/check_and_repair_1212"
+        self.set_up_grid(num_servers=4)
+
+        self.c0 = self.g.clients[0]
+        self.c0.DEFAULT_ENCODING_PARAMETERS['happy'] = 4
+        self.c0.DEFAULT_ENCODING_PARAMETERS['n'] = 4
+        self.c0.DEFAULT_ENCODING_PARAMETERS['k'] = 2
+
+        DATA = "data" * 1000
+        d = self.c0.upload(upload.Data(DATA, convergence=""))
+        def _stash_uri(ur):
+            self.uri = ur.uri
+        d.addCallback(_stash_uri)
+        d.addCallback(lambda ignored:
+            self.do_cli("check", self.uri))
+        def _check_results((rc, out, err)):
+            self.failUnlessEqual(err, "")
+            self.failUnlessReallyEqual(rc, 0)
+            self.failUnless("Summary: Healthy" in out, out)
+
+            # Now ditch share 1. This leaves shares 0, 2, and 3, as in #1212.
+            self.delete_shares_numbered(self.uri, [1])
+        d.addCallback(_check_results)
+        # Now do a repair. This should report that the file was unhealthy, and
+        # report that the file has been repaired successfully.
+        d.addCallback(lambda ignored:
+            self.do_cli("check", "--repair", self.uri))
+        def _check_results((rc, out, err)):
+            self.failUnlessReallyEqual(rc, 0)
+            self.failUnlessEqual(err, "")
+            self.failUnlessIn("Summary: not healthy", out)
+            self.failUnlessIn("repair successful", out)
+        d.addCallback(_check_results)
+        return d
+
     def test_deep_check(self):
         self.basedir = "cli/Check/deep_check"
         self.set_up_grid()
