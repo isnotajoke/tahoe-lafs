@@ -496,15 +496,6 @@ class Retrieve:
             reader = self.readers[shnum]
             self._active_readers.append(reader)
             self.log("added reader for share %d" % shnum)
-            # Each time we add a reader, we check to see if we need the
-            # private key. If we do, we politely ask for it and then continue
-            # computing. If we find that we haven't gotten it at the end of
-            # segment decoding, then we'll take more drastic measures.
-            if self._need_privkey and not self._node.is_readonly():
-                d = reader.get_encprivkey()
-                d.addCallback(self._try_to_validate_privkey, reader, reader.server)
-                # XXX: don't just drop the Deferred. We need error-reporting
-                # but not flow-control here.
 
     def _try_to_validate_prefix(self, prefix, reader):
         """
@@ -558,7 +549,8 @@ class Retrieve:
         # (well, okay, not epic, but meaningful)
         self.log("removing reader %s" % reader)
         # Remove the reader from _active_readers
-        self._active_readers.remove(reader)
+        if reader in self._active_readers:
+            self._active_readers.remove(reader)
         # TODO: self.readers.remove(reader)?
         for shnum in list(self.remaining_sharemap.keys()):
             self.remaining_sharemap.discard(shnum, reader.server)
@@ -604,15 +596,33 @@ class Retrieve:
         if self._current_segment > self._last_segment:
             # No more segments to download, we're done.
             self.log("got plaintext, done")
-            return self._done()
+            return self._check_privkey_and_finish()
         elif self._verify and len(self._active_readers) == 0:
             self.log("no more good shares, no need to keep verifying")
-            return self._done()
+            return self._check_privkey_and_finish()
         self.log("on segment %d of %d" %
                  (self._current_segment + 1, self._num_segments))
         d = self._process_segment(self._current_segment)
         d.addCallback(lambda ign: self.loop())
         return d
+
+    def _check_privkey_and_finish(self, ign=None):
+        if not self._need_privkey and not self._verify:
+            return self._done()
+
+        if len(self._active_readers) <= 0:
+            self._activate_enough_servers()
+
+        if len(self._active_readers) > 0:
+            r = self._active_readers.pop(0)
+            d = r.get_encprivkey()
+            d.addCallback(self._try_to_validate_privkey, r, r.server)
+            d.addBoth(self._check_privkey_and_finish)
+            return d
+        elif self._verify:
+            return self._done()
+        else:
+            return self._raise_notenoughshareserror()
 
     def _process_segment(self, segnum):
         """
@@ -934,6 +944,7 @@ class Retrieve:
 
 
     def _try_to_validate_privkey(self, enc_privkey, reader, server):
+        self._remove_reader(reader)
         alleged_privkey_s = self._node._decrypt_privkey(enc_privkey)
         alleged_writekey = hashutil.ssk_writekey_hash(alleged_privkey_s)
         if alleged_writekey != self._node.get_writekey():
@@ -957,7 +968,6 @@ class Retrieve:
         self._node._populate_encprivkey(enc_privkey)
         self._node._populate_privkey(privkey)
         self._need_privkey = False
-
 
 
     def _done(self):
