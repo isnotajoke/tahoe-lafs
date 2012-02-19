@@ -1748,6 +1748,7 @@ class Checker(unittest.TestCase, CheckerMixin, PublishMixin):
         d.addCallback(_check_num_bad)
         return d
 
+
     def test_check_all_bad_blocks(self):
         d = corrupt(None, self._storage, "share_data", [9]) # bad blocks
         # the Checker won't notice this.. it doesn't look at actual data
@@ -1883,7 +1884,6 @@ class Checker(unittest.TestCase, CheckerMixin, PublishMixin):
         d.addCallback(self.check_good,
                       "test_verify_mdmf_bad_encprivkey_uncheckable")
         return d
-
 
 class Repair(unittest.TestCase, PublishMixin, ShouldFailMixin):
 
@@ -2152,6 +2152,23 @@ class Repair(unittest.TestCase, PublishMixin, ShouldFailMixin):
             self.failIf(crr.get_pre_repair_results().is_healthy())
             self.failIf(crr.get_repair_attempted())
             self.failIf(crr.get_post_repair_results().is_healthy())
+        d.addCallback(_check_results)
+        return d
+
+    def test_check_and_repair_some_bad_encprivkeys(self):
+        d = self.publish_one()
+        def _done_publishing(ign):
+            self._fn_from_cap = self._nodemaker.create_from_cap(self._fn.get_uri())
+            corrupt(None, self._storage, "enc_privkey", range(3))
+            for peerid, shares in self._storage._peers.items():
+                shares.pop(9, None)
+            return self._fn_from_cap.check_and_repair(Monitor())
+        d.addCallback(_done_publishing)
+        def _check_results(crr):
+            self.failIf(crr.get_pre_repair_results().is_healthy())
+            self.failUnless(crr.get_repair_attempted())
+            self.failUnless(crr.get_post_repair_results().is_healthy())
+            self.failUnless(self._fn_from_cap.get_privkey())
         d.addCallback(_check_results)
         return d
 
