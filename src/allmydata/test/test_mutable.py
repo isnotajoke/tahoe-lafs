@@ -1485,8 +1485,8 @@ class Roundtrip(unittest.TestCase, testutil.ShouldFailMixin, PublishMixin):
         # process won't know to update it.
         self._fn._privkey = None
         return self._test_corrupt_all("enc_privkey",
-                                      None, # this shouldn't fail
-                                      should_succeed=True,
+                                      "ran out of servers", # this shouldn't fail
+                                      should_succeed=False,
                                       corrupt_early=False,
                                       fetch_privkey=True)
 
