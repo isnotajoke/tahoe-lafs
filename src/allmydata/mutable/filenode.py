@@ -852,6 +852,9 @@ class MutableFileVersion:
         else:
             # We ran into trouble; do MODE_CHECK so we're a little more
             # careful on subsequent tries.
+            # XXX: We might update to a servermap that doesn't contain our
+            # verinfo anymore. If that happens, we should probably just abort
+            # sensibly.
             d = self._update_servermap(mode=MODE_CHECK)
 
         d.addCallback(lambda ignored:
