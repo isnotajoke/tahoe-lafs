@@ -854,6 +854,9 @@ class Filenode(unittest.TestCase, testutil.ShouldFailMixin):
         d.addCallback(_created)
         return d
 
+    def test_modify_vanishing_version(self):
+        pass
+
     def test_upload_and_download_full_size_keys(self):
         self.nodemaker.key_generator = client.KeyGenerator()
         d = self.nodemaker.create_mutable_file()
