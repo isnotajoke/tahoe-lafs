@@ -877,7 +877,10 @@ class Filenode(unittest.TestCase, testutil.ShouldFailMixin):
         def modifier(old_contents, servermap, first_time):
             return "other new contents"
         d.addCallback(lambda ignored:
-            self._mv.modify(modifier))
+            self.shouldFail(NotEnoughSharesError,
+                            "test_vanishing_version",
+                            "disappeared after servermap update",
+                            self._mv.modify, modifier))
         return d
 
     def test_upload_and_download_full_size_keys(self):
