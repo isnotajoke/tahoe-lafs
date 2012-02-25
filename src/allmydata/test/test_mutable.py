@@ -855,7 +855,30 @@ class Filenode(unittest.TestCase, testutil.ShouldFailMixin):
         return d
 
     def test_modify_vanishing_version(self):
-        pass
+        # publish a file
+        d = self.nodemaker.create_mutable_file(MutableData("initial contents"))
+        # get the servermap
+        def _created(n):
+            self._node = n
+            return n.get_servermap(MODE_WRITE)
+        d.addCallback(_created)
+        # get the best version of the file that we can.
+        def _got_servermap(smap):
+            self._smap = smap
+            return self._node.get_best_mutable_version()
+        d.addCallback(_got_servermap)
+        # do an update.
+        def _got_mutable_version(mv):
+            self._mv = mv
+            return self._node.overwrite(MutableData("new contents"))
+        d.addCallback(_got_mutable_version)
+        # there shouldn't be any more shares at this point. Try
+        # modifying the file; this should fail.
+        def modifier(old_contents, servermap, first_time):
+            return "other new contents"
+        d.addCallback(lambda ignored:
+            self._mv.modify(modifier))
+        return d
 
     def test_upload_and_download_full_size_keys(self):
         self.nodemaker.key_generator = client.KeyGenerator()
