@@ -839,6 +839,13 @@ class MutableFileVersion:
         return self._modify_and_retry(modifier, backoffer, True)
 
 
+    def _validate_new_servermap(self, ign):
+        # Make sure that our version is in the new servermap
+        if self._version not in self._servermap.make_versionmap():
+            raise NotEnoughSharesError("Version disappeared after servermap update")
+        return
+
+
     def _modify_and_retry(self, modifier, backoffer, first_time):
         """
         I try to apply modifier to the contents of this version of the
@@ -857,6 +864,7 @@ class MutableFileVersion:
             # sensibly.
             d = self._update_servermap(mode=MODE_CHECK)
 
+        d.addCallback(self._validate_new_servermap)
         d.addCallback(lambda ignored:
             self._modify_once(modifier, first_time))
         def _retry(f):
