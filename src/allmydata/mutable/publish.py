@@ -292,12 +292,6 @@ class Publish:
                                    old_root_hash,
                                    old_salt)
 
-        # Our remote shares will not have a complete checkstring until
-        # after we are done writing share data and have started to write
-        # blocks. In the meantime, we need to know what to look for when
-        # writing, so that we can detect UncoordinatedWriteErrors.
-        self._checkstring = self._get_some_writer().get_checkstring()
-
         # Now, we start pushing shares.
         self._status.timings["setup"] = time.time() - self._started
         # First, we encrypt, encode, and publish the shares that we need
@@ -495,12 +489,6 @@ class Publish:
             elif (server, shnum) in self.bad_share_checkstrings:
                 old_checkstring = self.bad_share_checkstrings[(server, shnum)]
                 writer.set_checkstring(old_checkstring)
-
-        # Our remote shares will not have a complete checkstring until
-        # after we are done writing share data and have started to write
-        # blocks. In the meantime, we need to know what to look for when
-        # writing, so that we can detect UncoordinatedWriteErrors.
-        self._checkstring = self._get_some_writer().get_checkstring()
 
         # Now, we start pushing shares.
         self._status.timings["setup"] = time.time() - self._started
