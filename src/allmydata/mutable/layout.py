@@ -304,9 +304,14 @@ class SDMFSlotWriteProxy:
         Get the checkstring that I think currently exists on the remote
         server.
         """
-        if self._testvs:
-            return self._testvs[0][3]
-        return ""
+        assert "root_hash" in self._share_pieces
+        assert "salt" in self._share_pieces
+
+        return struct.pack(PREFIX,
+                           0, # SDMF file
+                           self._seqnum,
+                           self._share_pieces['root_hash'],
+                           self._share_pieces['salt'])
 
 
     def put_block(self, data, segnum, salt):
