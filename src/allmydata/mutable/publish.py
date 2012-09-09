@@ -990,15 +990,10 @@ class Publish:
 
         surprise_shares = set(read_data.keys()) - set([writer.shnum])
 
-        # We need to remove from surprise_shares any shares that we are
-        # knowingly also writing to that server from other writers.
-
-        # TODO: Precompute this.
-        shares = []
+        known_writers = {}
         for shnum, writers in self.writers.iteritems():
-            shares.extend([x.shnum for x in writers if x.server == server])
-        known_shnums = set(shares)
-        surprise_shares -= known_shnums
+            known_writers.update([(x.shnum, x) for x in writers
+                                 if x.server == server])
         self.log("found the following surprise shares: %s" %
                  str(surprise_shares))
 
@@ -1030,6 +1025,10 @@ class Publish:
                 # surprised), since I suspect there's a decent chance that
                 # we'll hit this in normal operation.
                 continue
+
+            elif shnum in known_writers and \
+                checkstring == known_writers[shnum].get_current_checkstring():
+                    continue
 
             else:
                 # the new shares are of a different version
