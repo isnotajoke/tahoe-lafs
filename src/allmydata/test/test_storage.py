@@ -2784,6 +2784,8 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                    1, 3, 10, 36, 36)
         sdmfw.put_block(self.blockdata, 0, self.salt)
 
+        sdmfw.set_existing_checkstring(self.checkstring)
+
         # Put the encprivkey
         sdmfw.put_encprivkey(self.encprivkey)
 
@@ -2808,6 +2810,37 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                   self.root_hash,
                                   self.salt)
         self.failUnlessEqual(sdmfw.get_next_checkstring(), checkstring)
+        self.failUnlessEqual(sdmfw.get_existing_checkstring(), self.checkstring)
+
+    def test_mdmf_writer_get_checkstring(self):
+        mw = self._make_new_mw("si1", 0)
+        self.build_test_mdmf_share()
+        mw.set_existing_checkstring(self.checkstring)
+        # Write a share using the mutable writer, and make sure that the
+        # reader knows how to read everything back to us.
+        d = defer.succeed(None)
+        for i in xrange(6):
+            d.addCallback(lambda ignored, i=i:
+                mw.put_block(self.block, i, self.salt))
+        d.addCallback(lambda ignored:
+            mw.put_encprivkey(self.encprivkey))
+        d.addCallback(lambda ignored:
+            mw.put_blockhashes(self.block_hash_tree))
+        d.addCallback(lambda ignored:
+            mw.put_sharehashes(self.share_hash_chain))
+        d.addCallback(lambda ignored:
+            mw.put_root_hash(self.root_hash))
+        d.addCallback(lambda ignored:
+            mw.put_signature(self.signature))
+        d.addCallback(lambda ignored:
+            mw.put_verification_key(self.verification_key))
+        d.addCallback(lambda ignored: mw.get_existing_checkstring())
+        d.addCallback(lambda checkstring:
+            self.failUnlessEqual(checkstring, self.checkstring))
+        d.addCallback(lambda ignored: mw.get_next_checkstring())
+        d.addCallback(lambda checkstring:
+            self.failUnlessEqual(checkstring, self.checkstring))
+        return d
 
 
 class Stats(unittest.TestCase):
