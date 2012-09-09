@@ -476,7 +476,7 @@ class IMutableSlotWriter(Interface):
     """
     The interface for a writer around a mutable slot on a remote server.
     """
-    def set_checkstring(seqnum_or_checkstring, root_hash=None, salt=None):
+    def set_existing_checkstring(seqnum_or_checkstring, root_hash=None, salt=None):
         """
         Set the checkstring that I will pass to the remote server when
         writing.
@@ -489,10 +489,16 @@ class IMutableSlotWriter(Interface):
         some other thing.
         """
 
-    def get_checkstring():
+    def get_existing_checkstring():
         """
         Get the checkstring that I think currently exists on the remote
         server.
+        """
+
+    def get_next_checkstring():
+        """
+        Get the checkstring that will exist on the remote server if the
+        current publish operation finishes.
         """
 
     def put_block(data, segnum, salt):

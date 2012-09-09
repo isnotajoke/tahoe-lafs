@@ -1761,8 +1761,8 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
             result, readv = results
             self.failUnless(result)
             self.failIf(readv)
-            self.old_checkstring = mw.get_checkstring()
-            mw.set_checkstring("")
+            self.old_checkstring = mw.get_existing_checkstring()
+            mw.set_existing_checkstring("")
         d.addCallback(_then)
         d.addCallback(lambda ignored:
             mw.finish_publishing())
@@ -1891,7 +1891,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
             self.failUnless(results)
 
         mw = self._make_new_mw("si1", 0)
-        mw.set_checkstring("this is a lie")
+        mw.set_existing_checkstring("this is a lie")
         for i in xrange(6):
             mw.put_block(self.block, i, self.salt)
         mw.put_encprivkey(self.encprivkey)
@@ -1903,7 +1903,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
         d = mw.finish_publishing()
         d.addCallback(_check_failure)
         d.addCallback(lambda ignored:
-            mw.set_checkstring(""))
+            mw.set_existing_checkstring(""))
         d.addCallback(lambda ignored:
             mw.finish_publishing())
         d.addCallback(_check_success)
@@ -2307,7 +2307,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
         d.addCallback(lambda ignored:
             mr.get_checkstring())
         d.addCallback(lambda checkstring:
-            self.failUnlessEqual(checkstring, mw.get_checkstring()))
+            self.failUnlessEqual(checkstring, mw.get_next_checkstring()))
         return d
 
 
@@ -2757,7 +2757,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
             return self._expected_checkstring
 
         d.addCallback(_then)
-        d.addCallback(sdmfw.set_checkstring)
+        d.addCallback(sdmfw.set_existing_checkstring)
         d.addCallback(lambda ignored:
             sdmfw.finish_publishing())
         def _then_again(results):
@@ -2802,7 +2802,7 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                                   1, # seqnum
                                   self.root_hash,
                                   self.salt)
-        self.failUnlessEqual(sdmfw.get_checkstring(), checkstring)
+        self.failUnlessEqual(sdmfw.get_next_checkstring(), checkstring)
 
 
 class Stats(unittest.TestCase):

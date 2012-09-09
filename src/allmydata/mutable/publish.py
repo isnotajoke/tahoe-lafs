@@ -288,9 +288,9 @@ class Publish:
             (old_seqnum, old_root_hash, old_salt, old_segsize,
              old_datalength, old_k, old_N, old_prefix,
              old_offsets_tuple) = old_versionid
-            writer.set_checkstring(old_seqnum,
-                                   old_root_hash,
-                                   old_salt)
+            writer.set_existing_checkstring(old_seqnum,
+                                            old_root_hash,
+                                            old_salt)
 
         # Now, we start pushing shares.
         self._status.timings["setup"] = time.time() - self._started
@@ -483,12 +483,12 @@ class Publish:
                 (old_seqnum, old_root_hash, old_salt, old_segsize,
                  old_datalength, old_k, old_N, old_prefix,
                  old_offsets_tuple) = old_versionid
-                writer.set_checkstring(old_seqnum,
-                                       old_root_hash,
-                                       old_salt)
+                writer.set_existing_checkstring(old_seqnum,
+                                                old_root_hash,
+                                                old_salt)
             elif (server, shnum) in self.bad_share_checkstrings:
                 old_checkstring = self.bad_share_checkstrings[(server, shnum)]
-                writer.set_checkstring(old_checkstring)
+                writer.set_existing_checkstring(old_checkstring)
 
         # Now, we start pushing shares.
         self._status.timings["setup"] = time.time() - self._started
@@ -829,7 +829,7 @@ class Publish:
         uncoordinated writes. SDMF files will have the same checkstring,
         so we need not do anything.
         """
-        self._checkstring = self._get_some_writer().get_checkstring()
+        self._checkstring = self._get_some_writer().get_next_checkstring()
 
 
     def _make_and_place_signature(self):
@@ -1027,7 +1027,7 @@ class Publish:
                 continue
 
             elif shnum in known_writers and \
-                checkstring == known_writers[shnum].get_current_checkstring():
+                checkstring == known_writers[shnum].get_existing_checkstring():
                     continue
 
             else:
