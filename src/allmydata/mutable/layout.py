@@ -308,7 +308,7 @@ class SDMFSlotWriteProxy:
         assert "salt" in self._share_pieces
 
         return struct.pack(PREFIX,
-                           0, # SDMF file
+                           SDMF_VERSION,
                            self._seqnum,
                            self._share_pieces['root_hash'],
                            self._share_pieces['salt'])
@@ -899,7 +899,7 @@ class MDMFSlotWriteProxy:
         else:
             roothash = "\x00" * 32
         return struct.pack(MDMFCHECKSTRING,
-                           1,
+                           MDMF_VERSION,
                            self._seqnum,
                            roothash)
 
