@@ -1558,6 +1558,11 @@ class MDMFProxies(unittest.TestCase, ShouldFailMixin):
                              len(sharedata),
                              len(sharedata),
                             )
+        self.checkstring = struct.pack(PREFIX,
+                                       0,
+                                       0,
+                                       self.root_hash,
+                                       self.salt)
         post_offset = struct.calcsize(">BQ32s16sBBQQLLLLQQ")
         signature_offset = post_offset + len(self.verification_key)
         sharehashes_offset = signature_offset + len(self.signature)
