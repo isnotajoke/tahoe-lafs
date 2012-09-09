@@ -22,6 +22,7 @@ from foolscap.api import Referenceable, fireEventually, RemoteException
 from base64 import b32encode
 from allmydata import uri as tahoe_uri
 from allmydata.client import Client
+from allmydata.storage.mutable import MutableShareFile
 from allmydata.storage.server import StorageServer, storage_index_to_dir
 from allmydata.util import fileutil, idlib, hashutil
 from allmydata.util.hashutil import sha1
@@ -399,6 +400,33 @@ class GridTestMixin:
                 sharedata = open(i_sharefile, "rb").read()
                 corruptdata = corruptor(sharedata, debug=debug)
                 open(i_sharefile, "wb").write(corruptdata)
+
+    def copy_mutable_share_to_server(self, filenode, shnum, size, destserver):
+        # Copy a mutable share associated with a URI from a source server to a
+        # destination server.
+        uri = filenode.get_uri()
+        shares = self.copy_shares(uri)
+        key = filter(lambda x: int(os.path.split(x)[1]) == shnum,
+                     shares.iterkeys())[0]
+        sf = MutableShareFile(key)
+        # Read the data from the share file. We can't just do a file
+        # copy because the write enabler would be wrong.
+        data = sf.readv([(0, size)])[0]
+
+        si = tahoe_uri.from_string(uri).storage_index
+
+        prefixdir = storage_index_to_dir(si)
+        basedir = os.path.join(destserver.sharedir, prefixdir)
+        fileutil.make_dirs(basedir)
+
+        wrapped = self.g.proxies_by_id[destserver.my_nodeid]
+
+        dest_sf = MutableShareFile(os.path.join(basedir, str(shnum)))
+        dest_sf.create(destserver.my_nodeid,
+                       filenode.get_write_enabler(wrapped))
+        dest_sf.writev([(0, data)], len(data))
+        for f in sf.get_leases():
+            dest_sf.add_lease(f)
 
     def corrupt_all_shares(self, uri, corruptor, debug=False):
         for (i_shnum, i_serverid, i_sharefile) in self.find_uri_shares(uri):
