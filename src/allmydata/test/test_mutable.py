@@ -2579,6 +2579,35 @@ class Problems(GridTestMixin, unittest.TestCase, testutil.ShouldFailMixin):
         d.addCallback(_created)
         return d
 
+    def test_sdmf_surprise_share_checkstring(self):
+        self.basedir = "mutable/Problems/test_sdmf_surprise_share_checkstring"
+        self.set_up_grid()
+        nm = self.g.clients[0].nodemaker
+        d = nm.create_mutable_file(MutableData("contents 1"))
+        def _created(n):
+            self._node = n
+            self.g.remove_server(self.g.get_all_serverids()[0])
+            return self._node.get_servermap(mode=MODE_WRITE)
+        d.addCallback(_created)
+        def _add_new_server(smap):
+            sharemap = smap.make_sharemap()
+            seen_shares = sharemap.keys()
+            share_to_copy = seen_shares[0]
+            ss = self.g.make_server(10)
+            self.g.add_server(10, ss)
+            size = 1024 * 1024
+            self.copy_mutable_share_to_server(self._node,
+                                              share_to_copy, size, ss)
+            return smap
+        d.addCallback(_add_new_server)
+        # Now we'll overwrite the file.
+        d.addCallback(lambda smap:
+            self.shouldFail(UncoordinatedWriteError,
+                            "sdmf_surprise_share_checkstring", None,
+                            self._node.upload,
+                            MutableData("contents 2"), smap))
+        return d
+
     def test_multiply_placed_shares(self):
         self.basedir = "mutable/Problems/test_multiply_placed_shares"
         self.set_up_grid()
