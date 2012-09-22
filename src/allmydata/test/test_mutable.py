@@ -2475,34 +2475,49 @@ class FirstServerGetsDeleted:
         return retval
 
 class Problems(GridTestMixin, unittest.TestCase, testutil.ShouldFailMixin):
-    def do_publish_surprise(self, version):
-        self.basedir = "mutable/Problems/test_publish_surprise_%s" % version
-        self.set_up_grid()
+    def do_double_publish(self, version, first_callback, second_callback):
+        """
+        Publish two versions of a mutable file. version must be one of
+        MDMF_VERSION or SDMF_VERSION. first_callback is called with the
+        results of the first file publish operation and the node object.
+        second_callback is called with the results of the overwrite and
+        the node object again.
+        """
         nm = self.g.clients[0].nodemaker
         d = nm.create_mutable_file(MutableData("contents 1"),
-                                    version=version)
+                                   version=version)
         def _created(n):
             d = defer.succeed(None)
-            d.addCallback(lambda res: n.get_servermap(MODE_WRITE))
-            def _got_smap1(smap):
-                # stash the old state of the file
-                self.old_map = smap
-            d.addCallback(_got_smap1)
+            d.addCallback(first_callback, n)
             # then modify the file, leaving the old map untouched
-            d.addCallback(lambda res: log.msg("starting winning write"))
             d.addCallback(lambda res: n.overwrite(MutableData("contents 2")))
-            # now attempt to modify the file with the old servermap. This
-            # will look just like an uncoordinated write, in which every
-            # single share got updated between our mapupdate and our publish
-            d.addCallback(lambda res: log.msg("starting doomed write"))
-            d.addCallback(lambda res:
-                          self.shouldFail(UncoordinatedWriteError,
-                                          "test_publish_surprise", None,
-                                          n.upload,
-                                          MutableData("contents 2a"), self.old_map))
+            d.addCallback(second_callback, n)
             return d
         d.addCallback(_created)
         return d
+
+    def do_publish_surprise(self, version):
+        self.basedir = "mutable/Problems/test_publish_surprise_%s" % version
+        self.set_up_grid()
+        def _first_callback(res, n):
+            d = n.get_servermap(MODE_WRITE)
+            def _stash_smap1(smap):
+                self.old_map = smap
+            d.addCallback(_stash_smap1)
+            return d
+
+        def _second_callback(res, n):
+            log.msg("starting doomed write")
+            d = defer.succeed(None)
+            d.addCallback(lambda ignored:
+                self.shouldFail(UncoordinatedWriteError,
+                                "test_publish_surprise", None,
+                                n.upload,
+                                MutableData("contents 2a"),
+                                self.old_map))
+            return d
+
+        return self.do_double_publish(version, _first_callback, _second_callback)
 
     def test_publish_surprise_sdmf(self):
         return self.do_publish_surprise(SDMF_VERSION)
