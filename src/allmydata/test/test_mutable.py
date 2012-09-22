@@ -2608,6 +2608,11 @@ class Problems(GridTestMixin, unittest.TestCase, testutil.ShouldFailMixin):
                             MutableData("contents 2"), smap))
         return d
 
+    def test_1641_uncoordinated_write_detection(self):
+        # Test that the publisher is suitably conservative when raising
+        # an uncoordinated write error.
+        self.failUnless(False, "not implmented yet")
+
     def test_multiply_placed_shares(self):
         self.basedir = "mutable/Problems/test_multiply_placed_shares"
         self.set_up_grid()
