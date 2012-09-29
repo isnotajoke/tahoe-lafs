@@ -2626,7 +2626,36 @@ class Problems(GridTestMixin, unittest.TestCase, testutil.ShouldFailMixin):
     def test_1641_uncoordinated_write_detection(self):
         # Test that the publisher is suitably conservative when raising
         # an uncoordinated write error.
-        self.failUnless(False, "not implemented yet")
+        self.basedir = "mutable/Problems/test_1641_uncoordinated_write_detection"
+        self.set_up_grid()
+        def _first_callback(res, n):
+            uri = n.get_uri()
+            shares = self.copy_shares(uri)
+            self.first_key = shares.keys()[0]
+            self.first_share = shares[self.first_key]
+
+        def _second_callback(res, n):
+            # grab a fresh servernamp
+            d = n.get_servermap(MODE_WRITE)
+            def _got_smap(smap):
+                self.smap = smap
+            d.addCallback(_got_smap)
+            # Restore the share from earlier
+            def _then(res):
+                shares = {}
+                shares[self.first_key] = self.first_share
+                self.restore_all_shares(shares)
+            d.addCallback(_then)
+            # start a doomed write, which should fail.
+            d.addCallback(lambda ignored:
+                self.shouldFail(UncoordinatedWriteError,
+                                "test_uncoordinated_write_detection", None,
+                                n.upload,
+                                MutableData("contents 2a"),
+                                self.smap))
+            return d
+
+        return self.do_double_publish(MDMF_VERSION, _first_callback, _second_callback)
 
     def test_multiply_placed_shares(self):
         self.basedir = "mutable/Problems/test_multiply_placed_shares"
